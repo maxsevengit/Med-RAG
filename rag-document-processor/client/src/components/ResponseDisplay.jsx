@@ -26,9 +26,9 @@ const ResponseDisplay = ({ response }) => {
         ) : (
             <MessageSquareWarning className="w-6 h-6 text-yellow-500 mr-3" />
         )}
-        Policy Analysis Result
+        Document Analysis Result
       </h3>
-      <p className="text-sm text-gray-500 mt-1 mb-6">AI-powered decision based on policy analysis</p>
+      <p className="text-sm text-gray-500 mt-1 mb-6">AI-powered analysis based on your documents</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Decision Status */}
@@ -53,7 +53,7 @@ const ResponseDisplay = ({ response }) => {
 
         {/* Coverage Amount */}
         <div>
-          <label className="text-sm font-medium text-gray-600">$ Coverage Amount</label>
+          <label className="text-sm font-medium text-gray-600">Amount/Value</label>
           <div className="mt-2 flex items-center justify-center p-3 rounded-lg bg-blue-50 border border-blue-200/80">
             <p className="text-xl font-semibold text-blue-800">
               {amount !== null && amount !== undefined ? `$${amount.toLocaleString()}` : '$ N/A'}
@@ -80,7 +80,7 @@ const ResponseDisplay = ({ response }) => {
           )}
           {relevantClauses && relevantClauses.length > 0 && (
             <div className="mb-3">
-              <strong className="text-gray-800">Relevant Policy Clauses:</strong>
+              <strong className="text-gray-800">Relevant Document Sections:</strong>
               <ul className="mt-1 list-disc list-inside">
                 {relevantClauses.map((clause, index) => (
                   <li key={index} className="text-gray-600">{clause}</li>

@@ -155,7 +155,7 @@ const DocumentManager = () => {
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-800">Document Manager</h2>
-              <p className="text-sm text-gray-600">Upload and manage policy documents</p>
+              <p className="text-sm text-gray-600">Upload and manage documents for AI analysis</p>
             </div>
           </div>
           
@@ -192,7 +192,7 @@ const DocumentManager = () => {
               <>
                 <Plus className="w-5 h-5" />
                 <Upload className="w-5 h-5" />
-                <span>Upload Policy Documents</span>
+                <span>Upload Documents</span>
               </>
             )}
           </button>
@@ -239,7 +239,7 @@ const DocumentManager = () => {
             <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
               <FolderOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 font-medium">No documents uploaded yet</p>
-              <p className="text-gray-400 text-sm mt-1">Upload policy documents to get started</p>
+              <p className="text-gray-400 text-sm mt-1">Upload documents to enable AI analysis</p>
             </div>
           ) : (
             <div className="grid gap-3">

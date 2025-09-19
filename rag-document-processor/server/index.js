@@ -174,28 +174,13 @@ async function initializeRAG() {
       }
     }
     
-    // Load documents from the documents folder
-    const loader = new DirectoryLoader('./documents', {
-      '.txt': (path) => new TextLoader(path),
-    });
-    
-    const docs = await loader.load();
-    console.log(`Loaded ${docs.length} documents`);
-    
-    // Debug: check document structure
-    console.log('Sample document:', JSON.stringify(docs[0], null, 2));
-    
-    // Split documents into chunks
+    // Initialize text splitter for user-uploaded documents
     textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 1000,
       chunkOverlap: 200,
     });
     
-    const splitDocs = await textSplitter.splitDocuments(docs);
-    console.log(`Split into ${splitDocs.length} chunks`);
-    
-    // Debug: check split document structure
-    console.log('Sample split document:', JSON.stringify(splitDocs[0], null, 2));
+    console.log('RAG system initialized - ready for user-uploaded documents');
     
     // Initialize embeddings using Xenova transformers (free, runs locally)
     try {
@@ -286,25 +271,7 @@ async function initializeRAG() {
       await vectorStore.addDocuments(chunks);
     };
 
-    // Register and index base policy documents
-    for (const doc of docs) {
-      const srcPath = doc.metadata?.source || 'unknown';
-      const stats = fs.existsSync(srcPath) ? fs.statSync(srcPath) : { size: Buffer.byteLength(doc.pageContent || '') };
-      const docId = String(nextDocumentId++);
-
-      documentRegistry.push({
-        id: docId,
-        name: path.basename(srcPath),
-        type: 'text/plain',
-        size: stats.size || 0,
-        uploadedAt: new Date().toISOString(),
-        path: srcPath,
-        isSystemDocument: true,
-        _cachedContent: doc.pageContent || '',
-      });
-
-      await addDocumentTextToIndex(docId, doc.pageContent, { source: srcPath, isSystemDocument: true });
-    }
+    // No system documents - only user-uploaded documents will be indexed
 
     // Also load previously uploaded files from uploads directory (persist across restarts)
     const uploadFiles = fs.readdirSync(uploadsDir, { withFileTypes: true })
@@ -585,19 +552,34 @@ Return only JSON.`;
     const searchResults = await vectorStore.similaritySearch(query, 5);
     const context = searchResults.map(doc => doc.pageContent).join('\n\n');
     
+    // Check if no documents are available
+    if (!context || context.trim().length === 0) {
+      return res.json({
+        answer: "No documents have been uploaded yet. Please upload your policy documents first to get answers to your questions.",
+        decision: "requires_more_info",
+        reasoning: "The system needs documents to analyze before it can answer questions.",
+        relevant_clauses: [],
+        limitations: "Upload policy documents to enable AI analysis.",
+        confidence: "low",
+        Decision: "requires_more_info",
+        Amount: null,
+        Justification: "No documents available for analysis. Please upload your policy documents first."
+      });
+    }
+    
     console.log('Retrieved context from documents:', context.substring(0, 500) + '...');
 
     // 3) Generate response based on document content using LLM
-    const ragPrompt = `You are an insurance claims assistant. Analyze the following policy documents and answer the user's question based ONLY on the information provided in the documents.
+    const ragPrompt = `You are a document analysis assistant. Analyze the following uploaded documents and answer the user's question based ONLY on the information provided in the documents.
 
-Policy Documents Context:
+Document Context:
 ${context}
 
 User Question: ${query}
 
 Please provide a comprehensive response that includes:
-1. A clear answer to the user's question based on the policy documents
-2. Specific references to relevant clauses or sections from the documents
+1. A clear answer to the user's question based on the document content
+2. Specific references to relevant sections or clauses from the documents
 3. Any limitations, exclusions, or conditions mentioned in the documents
 4. If the information is not available in the provided documents, clearly state that
 
@@ -606,7 +588,7 @@ Format your response as a JSON object with the following structure:
   "answer": "Direct answer to the question",
   "decision": "approved/rejected/requires_more_info",
   "reasoning": "Detailed explanation based on document content",
-  "relevant_clauses": ["List of relevant policy clauses or sections"],
+  "relevant_clauses": ["List of relevant document sections or clauses"],
   "limitations": "Any limitations or exclusions mentioned",
   "confidence": "high/medium/low based on document clarity"
 }`;

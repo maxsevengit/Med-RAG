@@ -19,9 +19,9 @@ const QueryForm = ({ onSubmit, loading, error }) => {
   };
 
   const sampleQueries = [
-    "I'm 30 years old, need knee surgery, live in Mumbai, and my policy is 1 year old. What's my coverage?",
-    "I'm 25 years old and need hip surgery. I live in Delhi. What's covered?",
-    "I need hip surgery but my policy is only 3 months old. What's covered?"
+    "What are the main terms and conditions in this document?",
+    "What are the key benefits or coverage mentioned?",
+    "Are there any exclusions or limitations I should know about?"
   ];
 
   return (
@@ -32,8 +32,8 @@ const QueryForm = ({ onSubmit, loading, error }) => {
             <MessageSquare className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Submit Your Claim Query</h2>
-            <p className="text-sm text-gray-600">Describe your medical situation for AI-powered analysis</p>
+            <h2 className="text-xl font-bold text-gray-800">Ask Questions About Your Documents</h2>
+            <p className="text-sm text-gray-600">Ask questions about your uploaded documents for AI-powered analysis</p>
           </div>
         </div>
       </div>
@@ -42,7 +42,7 @@ const QueryForm = ({ onSubmit, loading, error }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
             <label htmlFor="query" className="block text-sm font-semibold text-gray-700 mb-2">
-              Medical Claim Description
+              Your Question
             </label>
             <div className="relative">
               <textarea
@@ -50,7 +50,7 @@ const QueryForm = ({ onSubmit, loading, error }) => {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Describe your medical situation, age, location, and policy details..."
+                placeholder="Ask any question about your uploaded documents..."
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 resize-none h-32 text-gray-700 placeholder-gray-400"
                 disabled={loading}
               />
@@ -78,12 +78,12 @@ const QueryForm = ({ onSubmit, loading, error }) => {
             {loading ? (
               <>
                 <TailSpin height="20" width="20" color="white" />
-                <span>Processing Claim...</span>
+                <span>Processing...</span>
               </>
             ) : (
               <>
                 <Send className="w-5 h-5" />
-                <span>Analyze Claim</span>
+                <span>Analyze Documents</span>
                 <Zap className="w-4 h-4" />
               </>
             )}
