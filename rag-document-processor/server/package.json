@@ -1,0 +1,36 @@
+{
+  "name": "rag-document-processor-server",
+  "version": "1.0.0",
+  "description": "Backend server for RAG document processing system",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "@huggingface/inference": "^2.8.1",
+    "@xenova/transformers": "^2.17.2",
+    "axios": "^1.6.2",
+    "chromadb": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "langchain": "^0.1.25",
+    "mammoth": "^1.7.1",
+    "mailparser": "^3.6.6",
+    "@pinecone-database/pinecone": "^4.0.0",
+    "multer": "^2.0.2",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "rag",
+    "langchain",
+    "chromadb",
+    "gemini"
+  ],
+  "author": "",
+  "license": "MIT"
+}

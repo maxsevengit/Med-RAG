@@ -1,0 +1,30 @@
+{
+  "name": "med-rag-document-processor",
+  "version": "1.0.0",
+  "description": "Full-stack RAG system for medical insurance claims processing",
+  "main": "server/index.js",
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "start:server": "cd server && npm start",
+    "start:client": "cd client && npm run dev",
+    "start": "./start.sh",
+    "dev": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "build": "cd client && npm run build",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "rag",
+    "medical",
+    "insurance",
+    "claims",
+    "ai",
+    "gemini",
+    "langchain",
+    "chromadb"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
