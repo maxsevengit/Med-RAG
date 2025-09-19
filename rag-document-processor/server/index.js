@@ -58,6 +58,9 @@ let indexedDocuments = [];
 let documentRegistry = [];
 let nextDocumentId = 1;
 
+// Store query history in memory
+let queryHistory = [];
+
 // Reusable components
 let embedder = null;
 let embeddings = null;
@@ -570,6 +573,9 @@ Return only JSON.`;
     console.log('Retrieved context from documents:', context.substring(0, 500) + '...');
 
     // 3) Generate response based on document content using LLM
+    const moneyKeywords = ['amount', 'cost', 'price', 'fee', 'payout', 'coverage', 'limit', 'maximum', 'minimum', 'pay', 'paid', 'payment', 'claim amount', 'benefit amount', 'sum insured', 'deductible', 'premium'];
+    const isMoneyQuestion = moneyKeywords.some(keyword => query.toLowerCase().includes(keyword));
+    
     const ragPrompt = `You are a document analysis assistant. Analyze the following uploaded documents and answer the user's question based ONLY on the information provided in the documents.
 
 Document Context:
@@ -582,6 +588,8 @@ Please provide a comprehensive response that includes:
 2. Specific references to relevant sections or clauses from the documents
 3. Any limitations, exclusions, or conditions mentioned in the documents
 4. If the information is not available in the provided documents, clearly state that
+
+${isMoneyQuestion ? 'Since this is a question about amounts/money, please include specific monetary values if mentioned in the documents.' : 'Do not include monetary amounts unless specifically asked about them.'}
 
 Format your response as a JSON object with the following structure:
 {
@@ -613,18 +621,28 @@ Format your response as a JSON object with the following structure:
       finalResponse = JSON.parse(responseText);
       console.log('Parsed response:', finalResponse);
       
-      // Add legacy fields for compatibility
-      finalResponse.Justification = finalResponse.reasoning || 'Response generated based on policy documents';
-      if (finalResponse.decision === 'approved') {
-        finalResponse.Decision = 'approved';
-        finalResponse.Amount = 5000; // Default amount, should be extracted from documents
-      } else if (finalResponse.decision === 'rejected') {
-        finalResponse.Decision = 'rejected';
-        finalResponse.Amount = null;
+    // Add legacy fields for compatibility
+    finalResponse.Justification = finalResponse.reasoning || 'Response generated based on policy documents';
+    
+    // Check if the query is asking about money/amounts
+    const moneyKeywords = ['amount', 'cost', 'price', 'fee', 'payout', 'coverage', 'limit', 'maximum', 'minimum', 'pay', 'paid', 'payment', 'claim amount', 'benefit amount', 'sum insured', 'deductible', 'premium'];
+    const isMoneyQuestion = moneyKeywords.some(keyword => query.toLowerCase().includes(keyword));
+    
+    finalResponse.Decision = finalResponse.decision || 'requires_more_info';
+    
+    // Only provide amount for money-related questions
+    if (isMoneyQuestion) {
+      // Try to extract amount from the answer or reasoning
+      const amountMatch = (finalResponse.answer + ' ' + finalResponse.reasoning).match(/\$[\d,]+|₹[\d,]+|\b\d+[\d,]*\s*(?:dollars?|rupees?|USD|INR)\b/i);
+      if (amountMatch) {
+        const amountStr = amountMatch[0].replace(/[$,₹]/g, '').replace(/[^\d]/g, '');
+        finalResponse.Amount = parseInt(amountStr) || null;
       } else {
-        finalResponse.Decision = 'requires_more_info';
-        finalResponse.Amount = null;
+        finalResponse.Amount = null; // No specific amount found in document
       }
+    } else {
+      finalResponse.Amount = null; // Not a money question
+    }
       
     } catch (e) {
       console.warn('LLM response generation failed. Using fallback response.');
@@ -640,6 +658,17 @@ Format your response as a JSON object with the following structure:
         Justification: 'Technical error occurred while analyzing policy documents.'
       };
     }
+    
+    // Store query in history
+    queryHistory.push({
+      query,
+      timestamp: new Date().toISOString()
+    });
+    // Keep only last 50 queries
+    if (queryHistory.length > 50) {
+      queryHistory = queryHistory.slice(-50);
+    }
+    
     console.log('AI Response:', finalResponse);
     res.json(finalResponse);
     
@@ -661,11 +690,34 @@ Format your response as a JSON object with the following structure:
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     ragInitialized: isRAGInitialized,
     timestamp: new Date().toISOString()
   });
+});
+
+// Get query history
+app.get('/query-history', (req, res) => {
+  res.json(queryHistory.slice(-10)); // Return last 10 queries
+});
+
+// Add query to history
+app.post('/query-history', (req, res) => {
+  const { query, timestamp } = req.body;
+  if (query) {
+    queryHistory.push({
+      query,
+      timestamp: timestamp || new Date().toISOString()
+    });
+    // Keep only last 50 queries
+    if (queryHistory.length > 50) {
+      queryHistory = queryHistory.slice(-50);
+    }
+    res.json({ success: true });
+  } else {
+    res.status(400).json({ error: 'Query is required' });
+  }
 });
 
 // Start server only after RAG pipeline is initialized

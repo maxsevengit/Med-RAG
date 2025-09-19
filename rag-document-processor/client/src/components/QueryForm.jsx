@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Send, Sparkles, MessageSquare, Zap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Send, Sparkles, MessageSquare, Zap, Clock } from 'lucide-react';
 import { TailSpin } from 'react-loader-spinner';
+import axios from 'axios';
 
 const QueryForm = ({ onSubmit, loading, error }) => {
   const [query, setQuery] = useState('');
+  const [queryHistory, setQueryHistory] = useState([]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -18,11 +20,34 @@ const QueryForm = ({ onSubmit, loading, error }) => {
     }
   };
 
-  const sampleQueries = [
-    "What are the main terms and conditions in this document?",
-    "What are the key benefits or coverage mentioned?",
-    "Are there any exclusions or limitations I should know about?"
-  ];
+  // Load query history on component mount
+  useEffect(() => {
+    const loadQueryHistory = async () => {
+      try {
+        const response = await axios.get('http://localhost:3001/query-history');
+        setQueryHistory(response.data.reverse()); // Show newest first
+      } catch (error) {
+        console.error('Failed to load query history:', error);
+      }
+    };
+    
+    loadQueryHistory();
+  }, []);
+
+  // Refresh query history after successful submission
+  useEffect(() => {
+    if (!loading && !error && query) {
+      const refreshHistory = async () => {
+        try {
+          const response = await axios.get('http://localhost:3001/query-history');
+          setQueryHistory(response.data.reverse());
+        } catch (error) {
+          console.error('Failed to refresh query history:', error);
+        }
+      };
+      refreshHistory();
+    }
+  }, [loading, error]);
 
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
@@ -92,23 +117,36 @@ const QueryForm = ({ onSubmit, loading, error }) => {
 
         <div className="mt-6">
           <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center space-x-2">
-            <Sparkles className="w-4 h-4 text-blue-500" />
-            <span>Try these sample queries:</span>
+            <Clock className="w-4 h-4 text-blue-500" />
+            <span>Recent Queries:</span>
           </h3>
-          <div className="space-y-2">
-            {sampleQueries.map((sample, index) => (
-              <button
-                key={index}
-                onClick={() => setQuery(sample)}
-                disabled={loading}
-                className="w-full text-left p-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg transition-all duration-200 text-sm text-gray-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex items-start space-x-2">
-                  <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
-                  <span>{sample}</span>
-                </div>
-              </button>
-            ))}
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {queryHistory.length > 0 ? (
+              queryHistory.map((historyItem, index) => (
+                <button
+                  key={index}
+                  onClick={() => setQuery(historyItem.query)}
+                  disabled={loading}
+                  className="w-full text-left p-3 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg transition-all duration-200 text-sm text-gray-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-start space-x-2">
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <span className="block">{historyItem.query}</span>
+                      <span className="text-xs text-gray-400 mt-1">
+                        {new Date(historyItem.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="text-center py-4 text-gray-500 text-sm">
+                <Clock className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                <p>No recent queries yet</p>
+                <p className="text-xs">Your query history will appear here</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
