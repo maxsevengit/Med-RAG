@@ -1,10 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
-import { CheckCircle, XCircle, Send, FileText, Upload, Trash2, Eye } from 'lucide-react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import HistoryItem from './components/HistoryItem';
+import { CheckCircle, XCircle, Send, FileText, Upload, Trash2, Eye, LogOut } from 'lucide-react';
 import { TailSpin } from 'react-loader-spinner';
 
-function App() {
+// Wrapper for protected routes
+const ProtectedRoute = ({ children }) => {
+  const { token } = useAuth();
+  return token ? children : <Navigate to="/login" />;
+};
+
+// Main application component, now protected
+const MainApp = () => {
+  const { apiClient, logout } = useAuth();
+
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,7 +29,7 @@ function App() {
 
   const loadQueryHistory = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/query-history');
+      const response = await apiClient.get('/api/query-history');
       setQueryHistory(response.data.reverse()); // Show newest first
     } catch (error) {
       console.error('Failed to load query history:', error);
@@ -35,7 +47,7 @@ function App() {
     setResponse(null);
 
     try {
-      const result = await axios.post('http://localhost:3001/process-query', {
+      const result = await apiClient.post('/api/process-query', {
         query: query.trim()
       });
 
@@ -85,7 +97,7 @@ function App() {
         formData.append('document', file);
 
         // Upload document to backend
-        const uploadResponse = await axios.post('http://localhost:3001/upload-document', formData, {
+        const uploadResponse = await apiClient.post('/api/documents/upload', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -124,7 +136,7 @@ function App() {
 
   const loadDocuments = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/documents');
+      const response = await apiClient.get('/api/documents');
       setDocuments(response.data);
     } catch (error) {
       console.error('Failed to load documents:', error);
@@ -133,7 +145,7 @@ function App() {
 
   const deleteDocument = async (documentId) => {
     try {
-      await axios.delete(`http://localhost:3001/documents/${documentId}`);
+      await apiClient.delete(`/api/documents/${documentId}`);
       setDocuments(prev => prev.filter(doc => doc.id !== documentId));
     } catch (error) {
       console.error('Failed to delete document:', error);
@@ -141,9 +153,19 @@ function App() {
     }
   };
 
+  const handleDeleteHistoryItem = async (id) => {
+    try {
+      await apiClient.delete(`/api/query-history/${id}`);
+      await loadQueryHistory(); // Refresh the list
+    } catch (error) {
+      console.error('Failed to delete query from history:', error);
+      setError('Failed to delete history item.');
+    }
+  };
+
   const viewDocument = async (documentId) => {
     try {
-      const response = await axios.get(`http://localhost:3001/documents/${documentId}/content`);
+      const response = await apiClient.get(`/api/documents/${documentId}/content`);
       // For now, just show the content in an alert. In a real app, you'd show this in a modal
       alert(`Document Content:\n\n${response.data.content}`);
     } catch (error) {
@@ -189,14 +211,18 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <FileText className="w-10 h-10 text-indigo-600" />
-            <h1 className="text-4xl font-bold text-gray-800">Med-RAG</h1>
-          </div>
-          <p className="text-lg text-gray-600">
-            Medical Insurance Claims Processing with AI-Powered Document Analysis
-          </p>
+        <div className="flex justify-between items-center text-center mb-8">
+            <div className="flex-1"></div>
+            <div className="flex-1 flex items-center justify-center gap-3">
+                <FileText className="w-10 h-10 text-indigo-600" />
+                <h1 className="text-4xl font-bold text-gray-800">Med-RAG</h1>
+            </div>
+            <div className="flex-1 flex justify-end">
+                <button onClick={logout} className="flex items-center gap-2 text-gray-600 hover:text-indigo-600">
+                    <LogOut className="w-5 h-5" />
+                    <span>Logout</span>
+                </button>
+            </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
@@ -326,13 +352,14 @@ function App() {
                 {queryHistory.length > 0 ? (
                   queryHistory.map((item, index) => (
                     <HistoryItem
-                      key={index}
+                      key={item.id} // Use the database ID as the key
                       item={item}
                       onQuerySelect={setQuery}
+                      onDelete={() => handleDeleteHistoryItem(item.id)}
                     />
                   ))
                 ) : (
-                  <p className="p-3 text-sm text-gray-500 italic">No recent queries.</p>
+                  <p className="p-4 text-gray-600">No query history found.</p>
                 )}
               </div>
             </div>
@@ -423,6 +450,23 @@ function App() {
         </div>
       </div>
     </div>
+  );
+};
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+      <Route 
+        path="/" 
+        element={
+          <ProtectedRoute>
+            <MainApp />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   );
 }
 
