@@ -675,9 +675,10 @@ Format your response as a JSON object with the following structure:
       };
     }
     
-    // Store query in history
+    // Store query and response in history
     queryHistory.push({
       query,
+      response: finalResponse,
       timestamp: new Date().toISOString()
     });
     // Keep only last 50 queries

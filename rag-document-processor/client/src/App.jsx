@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { CheckCircle, XCircle, Send, FileText, Upload, Trash2, Eye } from 'lucide-react';
+import HistoryItem from './components/HistoryItem';
 import { TailSpin } from 'react-loader-spinner';
 
 function App() {
@@ -12,6 +13,16 @@ function App() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
+  const [queryHistory, setQueryHistory] = useState([]);
+
+  const loadQueryHistory = async () => {
+    try {
+      const response = await axios.get('http://localhost:3001/query-history');
+      setQueryHistory(response.data.reverse()); // Show newest first
+    } catch (error) {
+      console.error('Failed to load query history:', error);
+    }
+  };
 
   const handleProcessQuery = async () => {
     if (!query.trim()) {
@@ -29,6 +40,7 @@ function App() {
       });
 
       setResponse(result.data);
+      await loadQueryHistory(); // Refresh history
     } catch (err) {
       console.error('Error processing query:', err);
       if (err.response?.data?.error) {
@@ -140,9 +152,10 @@ function App() {
     }
   };
 
-  // Load documents on component mount
+  // Load documents and query history on component mount
   useEffect(() => {
     loadDocuments();
+    loadQueryHistory();
   }, []);
 
   const getDecisionIcon = (decision) => {
@@ -306,24 +319,21 @@ function App() {
               </button>
             </div>
 
-            {/* Example Queries */}
+            {/* Query History */}
             <div className="mt-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Example Queries:</h3>
-              <div className="space-y-2">
-                {[
-                  "I'm 25 years old and need hip surgery. I live in Delhi. What's covered?",
-                  "My 3-month-old child needs medical treatment. Is this covered?",
-                  "I need surgery in a small town. What's the maximum payout?",
-                  "I'm 65 years old. Are my medical procedures covered?"
-                ].map((example, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setQuery(example)}
-                    className="block w-full text-left text-sm text-indigo-600 hover:text-indigo-800 p-2 rounded hover:bg-indigo-50 transition-colors"
-                  >
-                    {example}
-                  </button>
-                ))}
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Query History:</h3>
+              <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+                {queryHistory.length > 0 ? (
+                  queryHistory.map((item, index) => (
+                    <HistoryItem
+                      key={index}
+                      item={item}
+                      onQuerySelect={setQuery}
+                    />
+                  ))
+                ) : (
+                  <p className="p-3 text-sm text-gray-500 italic">No recent queries.</p>
+                )}
               </div>
             </div>
           </div>

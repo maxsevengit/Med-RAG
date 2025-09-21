@@ -5,13 +5,13 @@ echo ""
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
-    echo "❌ Node.js is not installed. Please install Node.js 18+ first."
+    echo " Node.js is not installed. Please install Node.js 18+ first."
     exit 1
 fi
 
 # Check if npm is installed
 if ! command -v npm &> /dev/null; then
-    echo "❌ npm is not installed. Please install npm first."
+    echo " npm is not installed. Please install npm first."
     exit 1
 fi
 
@@ -20,7 +20,7 @@ echo ""
 
 # Check if .env file exists and has API key
 if [ ! -f "server/.env" ]; then
-    echo "❌ server/.env file not found. Please create it with your Gemini API key."
+    echo " server/.env file not found. Please create it with your Gemini API key."
     echo "Example:"
     echo "GEMINI_API_KEY=\"your_api_key_here\""
     exit 1
@@ -33,7 +33,7 @@ if ! grep -q "GEMINI_API_KEY=" "server/.env" || grep -q 'GEMINI_API_KEY=""' "ser
     exit 1
 fi
 
-echo "✅ Environment variables configured"
+echo " Environment variables configured"
 echo ""
 
 # Install dependencies if node_modules doesn't exist
@@ -49,10 +49,10 @@ if [ ! -d "client/node_modules" ]; then
     cd client && npm install && cd ..
 fi
 
-echo "✅ Dependencies installed"
+echo " Dependencies installed"
 echo ""
 
-echo "🌐 Starting the application..."
+echo " Starting the application..."
 echo ""
 
 # Start backend in background
@@ -70,7 +70,7 @@ while ! curl -s http://localhost:3001/health | grep -q '"status":"OK"'; do
     sleep 2
 done
 echo "
-✅ Backend is ready!"
+ Backend is ready!"
 
 # Start frontend
 echo "🎨 Starting frontend on port 5173..."
@@ -91,10 +91,10 @@ echo "Press Ctrl+C to stop both servers"
 # Function to cleanup on exit
 cleanup() {
     echo ""
-    echo "🛑 Stopping servers..."
+    echo " Stopping servers..."
     kill $BACKEND_PID 2>/dev/null
     kill $FRONTEND_PID 2>/dev/null
-    echo "✅ Servers stopped"
+    echo "Servers stopped"
     exit 0
 }
 
