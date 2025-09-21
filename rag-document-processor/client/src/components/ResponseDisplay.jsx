@@ -24,30 +24,34 @@ const ResponseDisplay = ({ response }) => {
         ) : decision === 'rejected' ? (
             <XCircle className="w-6 h-6 text-red-500 mr-3" />
         ) : (
-            <MessageSquareWarning className="w-6 h-6 text-yellow-500 mr-3" />
+            <MessageSquareWarning className="w-6 h-6 text-blue-500 mr-3" />
         )}
-        Document Analysis Result
+        {decision === 'approved' || decision === 'rejected' ? 'Claim Analysis Result' : 'Document Analysis Result'}
       </h3>
       <p className="text-sm text-gray-500 mt-1 mb-6">AI-powered analysis based on your documents</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Decision Status */}
         <div>
-          <label className="text-sm font-medium text-gray-600">Decision Status</label>
+          <label className="text-sm font-medium text-gray-600">
+            {decision === 'approved' || decision === 'rejected' ? 'Claim Status' : 'Analysis Status'}
+          </label>
           <div className={`mt-2 flex items-center justify-center p-3 rounded-lg ${
             decision === 'approved' ? 'bg-green-100' : 
-            decision === 'rejected' ? 'bg-red-100' : 'bg-yellow-100'
+            decision === 'rejected' ? 'bg-red-100' : 'bg-blue-100'
           }`}>
             {decision === 'approved' ? (
               <CheckCircle2 className="w-7 h-7 text-green-600" />
             ) : decision === 'rejected' ? (
               <XCircle className="w-7 h-7 text-red-600" />
             ) : (
-              <MessageSquareWarning className="w-7 h-7 text-yellow-600" />
+              <MessageSquareWarning className="w-7 h-7 text-blue-600" />
             )}
           </div>
           <p className="text-xs text-center mt-1 text-gray-600 capitalize">
-            {decision.replace('_', ' ')}
+            {decision === 'approved' ? 'Claim Approved' :
+             decision === 'rejected' ? 'Claim Rejected' : 
+             'Information Provided'}
           </p>
         </div>
 

@@ -137,6 +137,10 @@ try {
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
+    // Ensure the destination directory exists
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
     cb(null, uploadsDir);
   },
   filename: function (req, file, cb) {
@@ -309,7 +313,7 @@ async function initializeRAG() {
       documentRegistry.push({
         id: docId,
         name: path.basename(filePath),
-        type: ext === '.pdf' ? 'application/pdf' : 'text/plain',
+        type: ext === '.pdf' ? 'application/pdf' : (ext === '.docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : (ext === '.eml' ? 'message/rfc822' : 'text/plain')),
         size: stats.size || 0,
         uploadedAt: new Date(stats.mtimeMs).toISOString(),
         path: filePath,
@@ -575,6 +579,9 @@ Return only JSON.`;
     // 3) Generate response based on document content using LLM
     const moneyKeywords = ['amount', 'cost', 'price', 'fee', 'payout', 'coverage', 'limit', 'maximum', 'minimum', 'pay', 'paid', 'payment', 'claim amount', 'benefit amount', 'sum insured', 'deductible', 'premium'];
     const isMoneyQuestion = moneyKeywords.some(keyword => query.toLowerCase().includes(keyword));
+
+    const claimKeywords = ['claim', 'eligible', 'covered', 'approve', 'reject', 'claimant', 'my claim', 'this claim', 'will this be covered', 'is this covered', 'can i claim'];
+    const isClaimQuestion = claimKeywords.some(keyword => query.toLowerCase().includes(keyword));
     
     const ragPrompt = `You are a document analysis assistant. Analyze the following uploaded documents and answer the user's question based ONLY on the information provided in the documents.
 
@@ -591,10 +598,15 @@ Please provide a comprehensive response that includes:
 
 ${isMoneyQuestion ? 'Since this is a question about amounts/money, please include specific monetary values if mentioned in the documents.' : 'Do not include monetary amounts unless specifically asked about them.'}
 
+${isClaimQuestion ? 
+  'Since this appears to be asking about a specific claim or coverage decision, use "approved", "rejected", or "requires_more_info" for the decision field.' :
+  'Since this is an informational question about policy details, use "requires_more_info" for the decision field (this is just for technical compatibility).'
+}
+
 Format your response as a JSON object with the following structure:
 {
   "answer": "Direct answer to the question",
-  "decision": "approved/rejected/requires_more_info",
+  "decision": "${isClaimQuestion ? 'approved/rejected/requires_more_info' : 'requires_more_info'}",
   "reasoning": "Detailed explanation based on document content",
   "relevant_clauses": ["List of relevant document sections or clauses"],
   "limitations": "Any limitations or exclusions mentioned",
@@ -627,6 +639,10 @@ Format your response as a JSON object with the following structure:
     // Check if the query is asking about money/amounts
     const moneyKeywords = ['amount', 'cost', 'price', 'fee', 'payout', 'coverage', 'limit', 'maximum', 'minimum', 'pay', 'paid', 'payment', 'claim amount', 'benefit amount', 'sum insured', 'deductible', 'premium'];
     const isMoneyQuestion = moneyKeywords.some(keyword => query.toLowerCase().includes(keyword));
+    
+    // Check if the query is asking for a claim decision vs informational question
+    const claimKeywords = ['claim', 'eligible', 'covered', 'approve', 'reject', 'claimant', 'my claim', 'this claim', 'will this be covered', 'is this covered', 'can i claim'];
+    const isClaimQuestion = claimKeywords.some(keyword => query.toLowerCase().includes(keyword));
     
     finalResponse.Decision = finalResponse.decision || 'requires_more_info';
     

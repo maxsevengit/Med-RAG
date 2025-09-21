@@ -62,8 +62,15 @@ npm start &
 BACKEND_PID=$!
 cd ..
 
-# Wait a bit for backend to initialize
-sleep 5
+# Wait for backend to be ready
+echo "
+Waiting for backend to initialize..."
+while ! curl -s http://localhost:3001/health | grep -q '"status":"OK"'; do
+    echo -n "."
+    sleep 2
+done
+echo "
+✅ Backend is ready!"
 
 # Start frontend
 echo "🎨 Starting frontend on port 5173..."

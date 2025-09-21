@@ -61,8 +61,12 @@ function App() {
         const file = files[i];
         
         // Check file type
-        if (!file.type.includes('pdf') && !file.type.includes('text')) {
-          throw new Error(`Unsupported file type: ${file.type}. Please upload PDF or text files only.`);
+        const allowedTypes = ['application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'message/rfc822'];
+        const allowedExtensions = ['.pdf', '.txt', '.docx', '.eml'];
+        const fileExtension = `.${file.name.split('.').pop()}`;
+
+        if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+          throw new Error(`Unsupported file type: ${file.type || 'unknown'}. Please upload PDF, TXT, DOCX, or EML files only.`);
         }
 
         const formData = new FormData();
